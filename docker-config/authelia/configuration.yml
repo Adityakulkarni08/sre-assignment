@@ -1,0 +1,56 @@
+host: 0.0.0.0
+port: 9091
+
+log:
+  level: debug  # enables detailed logs for troubleshooting
+
+# This is the default fallback redirection (only used when no rd param is provided)
+default_redirection_url: https://grafana.auth.local
+
+session:
+  name: authelia_session
+  domain: auth.local  # removed the dot prefix per warning
+  expiration: 1h
+  inactivity: 5m
+  remember_me_duration: 10M
+  secret: your_secret
+
+authentication_backend:
+  file:
+    path: /config/users_database.yml
+
+access_control:
+  default_policy: deny
+  rules:
+    - domain: "*.auth.local"
+      policy: one_factor
+
+    - domain: "gitea.auth.local"
+      policy: one_factor
+
+    - domain: "grafana.auth.local"
+      policy: one_factor
+
+    - domain: "authelia.auth.local"
+      policy: bypass
+
+totp:
+  issuer: authelia.auth.local
+
+duo_api:
+  disable: true
+
+notifier:
+  filesystem:
+    filename: /config/notification.txt
+
+storage:
+  local:
+    path: /config/db.sqlite3
+  encryption_key: encryption_key
+
+identity_validation:
+  reset_password:
+    jwt_secret: 'jwt_key'
+    jwt_lifespan: '24h'
+    jwt_algorithm: "HS256"

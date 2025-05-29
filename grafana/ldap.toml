@@ -1,0 +1,23 @@
+[[servers]]
+host = "ldap:389"
+use_ssl = false
+start_tls = false
+ssl_skip_verify = true
+bind_dn = "cn=admin,dc=example,dc=org"
+bind_password = "adminpassword"
+search_filter = "(uid=%s)"
+search_base_dns = ["ou=users,dc=example,dc=org"]
+
+[servers.attributes]
+name = "uid"
+email = "mail"
+username = "uid"
+
+[[servers.group_mappings]]
+group_dn = "cn=admins,ou=groups,dc=example,dc=org"
+org_role = "Admin"
+
+[[servers.group_mappings]]
+group_dn = "cn=users,ou=groups,dc=example,dc=org"
+org_role = "Editor"
+

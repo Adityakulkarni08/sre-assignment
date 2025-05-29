@@ -1,0 +1,85 @@
+version: '3.8'
+
+services:
+  ldap:
+    image: osixia/openldap:1.5.0
+    container_name: ldap
+    environment:
+      - LDAP_ORGANISATION=ExampleCorp
+      - LDAP_DOMAIN=example.com
+      - LDAP_ADMIN_PASSWORD=adminpassword
+    ports:
+      - "389:389"
+      - "636:636"
+    volumes:
+      - ./ldap/config:/etc/ldap/slapd.d
+      - ./ldap/data:/var/lib/ldap
+    networks:
+      - app
+
+  gitea:
+    image: gitea/gitea:latest
+    container_name: gitea
+    environment:
+      - USER_UID=1000
+      - USER_GID=1000
+    volumes:
+      - ./gitea:/data
+    expose:
+      - "3000"
+    networks:
+      - app
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    volumes:
+      - ./grafana:/var/lib/grafana
+    environment:
+      - GF_AUTH_ANONYMOUS_ENABLED=false
+      - GF_SECURITY_ALLOW_EMBEDDING=true
+      - GF_AUTH_PROXY_ENABLED=true
+      - GF_AUTH_PROXY_HEADER_NAME=X-WEBAUTH-USER
+      - GF_AUTH_PROXY_AUTO_SIGN_UP=true
+      - GF_AUTH_BASIC_ENABLED=false
+      - GF_AUTH_PROXY_WHITELIST=172.19.0.6
+    expose:
+      - "3000"
+    networks:
+      - app
+
+  authelia:
+    image: authelia/authelia:latest
+    container_name: authelia
+    depends_on:
+      - ldap
+    volumes:
+      - ./authelia/configuration.yml:/config/configuration.yml:rw
+      - ./authelia/users_database.yml:/config/users_database.yml:rw
+    expose:
+      - "9091"
+    networks:
+      - app
+
+  nginx:
+    image: nginx:latest
+    container_name: nginx
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:rw
+      - ./nginx/sites/:/etc/nginx/sites-enabled/:rw
+      - ./nginx/certs/:/etc/nginx/certs/:rw
+      - ./nginx/proxy_params:/etc/nginx/proxy_params:rw
+    ports:
+      - "80:80"
+      - "443:443"
+    depends_on:
+      - gitea
+      - grafana
+      - authelia
+    networks:
+      - app
+
+networks:
+  app:
+    driver: bridge
+
